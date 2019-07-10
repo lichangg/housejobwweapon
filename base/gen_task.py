@@ -17,15 +17,15 @@ USER_AGENTS=[
 'Opera/9.80 (Windows NT 6.1; U; en) Presto/2.8.131 Version/11.11',
 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11',
 ]
-def request(use_proxy,*args,**kwargs):
-    headers={}
-    headers['User-Agent']=random.choice(USER_AGENTS)
+base_header = random.choice(USER_AGENTS)
+def _requests(use_proxy,headers,*args,**kwargs):
+    headers['user-agent']=random.choice(USER_AGENTS)
     if use_proxy:
-        requests.get(headers=headers,proxies=proxies, *args,**kwargs)
+        return requests.get(headers=headers,proxies=proxies, *args,**kwargs)
     else:
-        requests.get(headers=headers, proxies=None, *args, **kwargs)
+        return requests.get(headers=headers, proxies=None, *args, **kwargs)
 class TaskProducer():
-    request=requests
+    requests=_requests
     json=json
     re=re
     def __init__(self, plat_name, task_mq, customer,queue):
@@ -36,6 +36,21 @@ class TaskProducer():
 
     def crawl(self,url_data):
         pass
+    @staticmethod
+    def new_house_obj():
+        house_obj = {}
+        house_obj['city'] = None
+        house_obj['title'] = None
+        house_obj['loc'] = None
+        house_obj['struct'] = None
+        house_obj['area'] = None
+        house_obj['rent'] = None
+        house_obj['attr'] = None
+        house_obj['community_name'] = None
+        house_obj['thumb_img'] = None
+        house_obj['pub_time'] = None
+        house_obj['extra'] = None
+        return house_obj
 
 
 
