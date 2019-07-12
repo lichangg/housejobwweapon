@@ -17,6 +17,7 @@ class LianjiaCrawler(TaskProducer):
         resp=self.requests.get(url,headers=headers,timeout=(3,7))
         dom = self.etree.HTML(resp.text)
         house_doms = dom.xpath('//div[@class="content__list--item"]')
+        house_li=[]
         for house_dom in house_doms:
             city = house_dom.xpath('//h1/a/text()')
             loc = house_dom.xpath('.//p[@class="content__list--item--des"]//a/text()')
@@ -44,7 +45,8 @@ class LianjiaCrawler(TaskProducer):
             house_obj['pub_time'] = pub_time[0]
             house_obj['img_group'] = []
             house_obj['extra'] = None
-            return house_obj
+            house_li.append(house_obj)
+        return house_li
 
 if __name__ == '__main__':
     import requests
