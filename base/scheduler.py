@@ -25,7 +25,7 @@ class Scheduler:
                 self.logger.error(body)
                 self.logger.error(traceback.format_exc())
             else:
-                ch.basic_ack(delivery_tag=method.delivery_tag)  # tell mq the task has done
+                ch.basic_ack(delivery_tag=method.delivery_tag)  # task done
 
         self.logger.info('start consuming!')
         self.customer.server_forever(callback)
