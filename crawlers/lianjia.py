@@ -10,8 +10,8 @@ class LianjiaCrawler(TaskProducer):
         page = url_data.get('page')
         url = ori_url+ f'/zufang/pg{page}'
         headers = {
-            "Host": domain.replace('https://', ''),
-            "Referer": domain.replace('https://', ''),
+            "Host": ori_url.replace('https://', ''),
+            "Referer": ori_url.replace('https://', ''),
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36",
         }
         resp=self.requests.get(url,headers=headers,timeout=(3,7))
@@ -33,7 +33,7 @@ class LianjiaCrawler(TaskProducer):
             house_obj = dict()
             house_obj['city'] = city[0].replace('深圳', '')
             house_obj['title'] = title[0].strip()
-            house_obj['house_url'] = domain + url[0]
+            house_obj['house_url'] = ori_url + url[0]
             house_obj['district'] = loc[0]
             house_obj['loc'] = '-'.join(loc)
             house_obj['struct'] = '-'.join([i.strip() for i in struct]).strip('-')
