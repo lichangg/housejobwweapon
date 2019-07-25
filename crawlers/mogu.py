@@ -49,7 +49,7 @@ if __name__ == '__main__':
     import requests
 
     headers = {
-               "Host": "sz.zu.ke.com",
+               "Host": "mgzf.com",
                "Referer": "https://sz.ke.com/ershoufang/",
                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36"}
     domain='https://sz.zu.ke.com'
