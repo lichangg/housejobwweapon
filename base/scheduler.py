@@ -29,3 +29,6 @@ class Scheduler:
 
         self.logger.info('start consuming!')
         self.customer.server_forever(callback)
+
+    def get(self):
+        return

@@ -3,8 +3,8 @@
 from base.gen_task import TaskProducer
 
 
-class BeikeCrawler(TaskProducer):
-
+class BeikeCrawler():
+    name = 'beike'
     def crawl(self, url_data):
         ori_url = url_data.get('url')
         page = url_data.get('page')

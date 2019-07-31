@@ -3,8 +3,8 @@
 from base.gen_task import TaskProducer
 
 
-class BeikeCrawler(TaskProducer):
-
+class MoguCrawler():
+    name='mogu'
     def crawl(self, url_data):
         area_pat = self.re.compile(r'(\d{1,5}\.\d)㎡') #TODO 得去掉这个
         ori_url = url_data.get('url')
