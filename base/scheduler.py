@@ -16,7 +16,7 @@ class Scheduler:
     def get_task(self,):
         def callback(ch, method, properties, body):
             try:
-                goods_id = pass
+                pass
             except ImportError: #//TODO
                 self.customer.send_task(body)
                 self.logger.info('re send data to MQ')
