@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-def init():
-    pass
+from core.spidercore import Core
 
-def work():
-    pass
+
+import time
+
+def main():
+    # 1. 定时发送请求
+    engine = Core()
+    while True:
+        engine.start()
+        time.sleep(3)
+
+
+
+if __name__ == "__main__":
+    main()

@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from ..utils.log import logger
+# from ..utils.log import logger
 
-from ..utils.default_settings import *
+from utils.default_settings import *
 # 根据解释器环境，判断是py2/py3，并导入对应的队列类
 #from six.moves.queue import Queue
 
 # 判断用户角色，如果是非分布式，使用Python的队列；如果是分布式，使用Redis的队列
 if ROLE == None:
     from six.moves.queue import Queue
-    from ..utils.myset import NormalFilterSet as Set
-    logger.info("ROLE is {}".format(ROLE))
+    from utils.myset import NormalFilterSet as Set
+    print("ROLE is {}".format(ROLE))
 
 elif ROLE in ['master', 'slave']:
-    from ..utils.redisqueue import Queue
-    from ..utils.myset import RedisFilterSet as Set
-    logger.info("ROLE is {}".format(ROLE))
+    from utils.redisqueue import Queue
+    from utils.myset import RedisFilterSet as Set
+    print("ROLE is {}".format(ROLE))
 else:
     raise ImportError("Not Support this Role : <{}>".format(ROLE))
 
@@ -62,7 +62,7 @@ class Scheduler(object):
             return True
         else:
             # 否则，表示重复， 不允许添加
-            logger.info("Filter request: [{}] <{}>".format(request.method, request.url))
+            print("Filter request: [{}] <{}>".format(request.method, request.url))
             return False
 
 

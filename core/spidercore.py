@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+import time
 from datetime import datetime
-from ..base.request import LRequest
-from ..base.response import LResponse
-from ..items import Item
 
+from core.downloader import Downloader
+from core.scheduler import Scheduler
+from base.request import LRequest
+from base.response import LResponse
+from base.item import Item
+from utils.default_settings import *
 from settings import *
 
 if ASYNC_TYPE == "thread":
@@ -18,9 +22,7 @@ elif ASYNC_TYPE == "coroutine":
 else:
     raise Exception("Not Support Async Type: {}".format(ASYNC_TYPE))
 
-SPIDERS = ['beike.BeikeCrawler',
-           'lianjia.LianjiaCrawler',
-           'mogu.MoguCrawler']
+
 class Core():
     def __init__(self):#, spider_group, task_gettter):
         # self.spider_group = spider_group
@@ -28,12 +30,15 @@ class Core():
         self.spiders=self._auto_import_cls(SPIDERS,True)
         self.pool = Pool()
         self.pipelines = self._auto_import_cls(PIPELINES)
-
+        self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
         #self.downloader_mids = downloader_mids
         self.downloader_mids = self._auto_import_cls(DOWNLOADER_MIDDLEWARES)
-
+        self.scheduler = Scheduler()
+        self.downloader = Downloader()
         #self.spider_mids = spider_mids
         # self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
+        self.is_running = True
+        self.total_response = 0
     def _auto_import_cls(self, path_list=[], is_spider=False):
         if is_spider:
             instances = {}
@@ -43,17 +48,23 @@ class Core():
         import importlib
 
         for path in path_list:
-            module_name = 'crawlers.'+path[:path.rfind(".")]
-            class_name = path[path.rfind(".") + 1:]
-            result = importlib.import_module(module_name)
-            cls = getattr(result, class_name)
+
 
             if is_spider:
+                module_name = 'crawlers.' + path[:path.rfind(".")]
+                class_name = path[path.rfind(".") + 1:]
+                result = importlib.import_module(module_name)
+                cls = getattr(result, class_name)
                 instances[cls.name] = cls()
                 print(f'爬虫“{cls.name}”已加载')
 
             else:
+                module_name = path[:path.rfind(".")]
+                class_name = path[path.rfind(".") + 1:]
+                result = importlib.import_module(module_name)
+                cls = getattr(result, class_name)
                 instances.append(cls())
+                print(f'“{cls.__name__}”已加载')
         return instances
     def _start_engine(self):
         # master只执行 添加请求，所以total_request会自增，
@@ -89,30 +100,31 @@ class Core():
         self.pool.close()
         self.pool.join()
 
-        logger.info("Main Thread is over!")
+        print("Main Thread is over!")
     def _callback(self, _):
         if self.is_running:
             self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
     def start(self):
         # 开始时间
         start = datetime.now()
-        logger.info("Start time : {}".format(start))
-        logger.info("----"*30)
+        print("Start time : {}".format(start))
+        print("----"*30)
 
         self._start_engine()
 
         # 结束时间
         end = datetime.now()
 
-        logger.info("----"*30)
-        logger.info("End time : {}".format(end))
+        print("----"*30)
+        print("End time : {}".format(end))
         # 总计运行时间
-        logger.info("Useing time : {}".format( (end - start).total_seconds() ))
+        print("Useing time : {}".format( (end - start).total_seconds() ))
 
     def _execute_start_requests(self):
         # 将所有爬虫的start_urls里的请求全部放入同一个调度器中
         #[("baidu", baidu_spider), ("douban" : douban_spider)]
         for spider_name, spider in self.spiders.items():
+            print(spider_name, spider)
             # 1. 从spider中获取第一批请求，交给调度器
             #request = self.spider.start_requests()
             for request in spider.start_requests():
@@ -147,7 +159,7 @@ class Core():
         for downloader_mid in self.downloader_mids:
             response = downloader_mid.process_response(response, spider)
         #  将响应交给爬虫解析
-        #parse_func = self.spider.parse(response)
+        parse_func = spider.parse(response)
 
         #爬虫对象的某个解析方法 parse， parse_page
         #getattr(spider, "parse_page")
@@ -155,8 +167,8 @@ class Core():
 
 
 
-        callback_func = getattr(spider, request.callback)
-        parse_func = callback_func(response)
+        # callback_func = getattr(spider, request.callback)
+        # parse_func = callback_func(response)
 
 
 
