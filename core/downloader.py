@@ -11,7 +11,8 @@ class Downloader(object):
 
     def send_request(self, request):
         print("[Downloader] : Request [{}] <{}>".format(request.method, request.url))
-        print(request.headers)
+        print('注意',request.url)
+        print('注意',request.headers)
         if request.method.upper() == "GET":
             response = requests.get(
                 url = request.url,
@@ -58,3 +59,11 @@ if __name__ == '__main__':
     r = LRequest(url=url,headers=headers)
     resp = Downloader().send_request(r)
     print(resp.text)
+    '''
+    注意 https://sz.zu.ke.com/zufang/pg2
+    注意 {'Host': 'sz.zu.ke.com', 'Referer': 'https://sz.ke.com/ershoufang/', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'}
+'''
+    '''
+    注意 https://sz.zu.ke.com/zufang/pg0
+    注意 {'Host': 'sz.zu.ke.com/zufang/pg0', 'Referer': 'https://sz.ke.com/ershoufang/', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'}
+'''

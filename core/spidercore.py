@@ -159,7 +159,8 @@ class Core():
         for downloader_mid in self.downloader_mids:
             response = downloader_mid.process_response(response, spider)
         #  将响应交给爬虫解析
-        parse_func = spider.parse(response)
+        print('dsfdsf')
+        # parse_func = spider.parse(response)
 
         #爬虫对象的某个解析方法 parse， parse_page
         #getattr(spider, "parse_page")
@@ -167,8 +168,8 @@ class Core():
 
 
 
-        # callback_func = getattr(spider, request.callback)
-        # parse_func = callback_func(response)
+        callback_func = getattr(spider, request.callback)
+        parse_func = callback_func(response)
 
 
 
