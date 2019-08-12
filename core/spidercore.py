@@ -6,7 +6,7 @@ from datetime import datetime
 from core.downloader import Downloader
 from core.scheduler import Scheduler
 from base.request import LRequest
-from base.response import LResponse
+# from base.response import LResponse
 from base.item import Item
 from utils.default_settings import *
 from settings import *
@@ -35,8 +35,8 @@ class Core():
         self.downloader_mids = self._auto_import_cls(DOWNLOADER_MIDDLEWARES)
         self.scheduler = Scheduler()
         self.downloader = Downloader()
-        #self.spider_mids = spider_mids
-        # self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
+        # self.spider_mids = spider_mids
+        self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
         self.is_running = True
         self.total_response = 0
     def _auto_import_cls(self, path_list=[], is_spider=False):
@@ -159,7 +159,6 @@ class Core():
         for downloader_mid in self.downloader_mids:
             response = downloader_mid.process_response(response, spider)
         #  将响应交给爬虫解析
-        print('dsfdsf')
         # parse_func = spider.parse(response)
 
         #爬虫对象的某个解析方法 parse， parse_page
@@ -186,7 +185,7 @@ class Core():
 
             elif isinstance(item_or_request, Item):
                 for spider_mid in self.spider_mids:
-                    item_or_request  = spider_mid.process_item(item_or_request, spider)
+                    item_or_request = spider_mid.process_item(item_or_request, spider)
 
                 for pipeline in self.pipelines:
                     item_or_request = pipeline.process_item(item_or_request, spider)

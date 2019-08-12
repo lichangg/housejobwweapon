@@ -6,8 +6,12 @@ class Item(object):
     """
     def __init__(self, data):
         # 在设计类时，如果某个属性只允许查看，不允许修改。
-        self._data = data
+        self.data = data
 
-    @property
-    def data(self):
-        return self._data
+    # @property
+    # def data(self):
+    #     return self._data
+if __name__ == '__main__':
+    a={'name':'lic','age':18}
+    d=Item(a)
+    print(d.data['name'])

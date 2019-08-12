@@ -9,7 +9,7 @@ class LResponse(object):
     """
         响应类
     """
-    def __init__(self, url, body, text, headers, status_code, encoding, request):
+    def __init__(self, url, body, text, headers, status_code, encoding, request,extra=None):
         self.url = url  # 对应的url地址
         self.body = body
         self.text = text
@@ -17,6 +17,7 @@ class LResponse(object):
         self.status_code = status_code
         self.encoding = encoding
         self.request = request  # 对应的请求对象
+        self.extra = extra
 
 
     def xpath(self, rule):

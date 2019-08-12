@@ -46,6 +46,7 @@ class Downloader(object):
                 status_code = response.status_code,
                 encoding = chardet.detect(response.content)['encoding'],
                 request = request,
+                extra = request.extra,
         )
 
 if __name__ == '__main__':
