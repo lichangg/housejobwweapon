@@ -2,34 +2,42 @@
 # -*- coding:utf-8 -*-
 import requests
 import chardet
-
+from traceback import format_exc
 from base.response import LResponse
-
+from retry import retry
 # from ..utils.log import logger
 
 class Downloader(object):
-
+    @retry(tries=3)
     def send_request(self, request):
         print("[Downloader] : Request [{}] <{}>".format(request.method, request.url))
         print('注意',request.url)
         print('注意',request.headers)
         if request.method.upper() == "GET":
-            response = requests.get(
-                url = request.url,
-                headers = request.headers,
-                params = request.params,
-                proxies = request.proxy
+            try:
+                response = requests.get(
+                    url = request.url,
+                    headers = request.headers,
+                    params = request.params,
+                    proxies = request.proxies,
+                    timeout = request.timeout
 
-            )
-
+                )
+            except Exception as e:
+                print(format_exc())
+                raise e
         elif request.method.upper() == "POST":
-            response = requests.post(
-                url = request.url,
-                headers = request.headers,
-                data = request.formdata,
-                proxies = request.proxy
+            try:
+                response = requests.post(
+                    url = request.url,
+                    headers = request.headers,
+                    data = request.formdata,
+                    proxies = request.proxy
 
-            )
+                )
+            except Exception as e:
+                print(format_exc())
+                raise e
         else:
             # 如果请求方法不支持，则抛出异常
             raise Exception("Not Support method <{}>".format(request.method))

@@ -11,7 +11,7 @@ class DownloaderMiddleware1(object):
             "Host": re.findall(r'//(.*?)/',request.url)[0],
             "Referer": "https://sz.ke.com/ershoufang/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36"}
-        request.host = re.findall()
+
         return request
 
 

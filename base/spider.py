@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-from .request import Request
-from ..items import Item
-
+from base.request import LRequest
 class Spider(object):
 
     start_urls = []
@@ -13,7 +11,7 @@ class Spider(object):
             返回第一个入口请求给引擎
         """
         for url in self.start_urls:
-            yield Request(url)
+            yield LRequest(url)
 
 
     def parse(self, response):

@@ -7,9 +7,8 @@ class HousePipeline(object):
         self.conn = pymongo.MongoClient(host=MONGO_HOST)
     def process_item(self,item, spider):
         # data=dict(item)
-
-        print(item.data)
         self.conn['housejobweapon']['house'].update({"house_code":item.data['house_code']},item.data,upsert=True)
+        print(item.data,'已加入')
         return item
     def __del__(self):
         self.conn.close()
