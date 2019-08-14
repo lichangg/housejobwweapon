@@ -6,3 +6,5 @@ MONGO_HOST='127.0.0.1'
 SPIDERS = ['beike.BeikeCrawler']
            # 'lianjia.LianjiaCrawler',
            # 'mogu.MoguCrawler']
+
+ASYNC_COUNT=5

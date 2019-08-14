@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import time
+from concurrent.futures import as_completed
 from datetime import datetime
 
+from base.requestexec import BaseThreadPoolExecutor
+from traceback import format_exc
 from core.downloader import Downloader
 from core.scheduler import Scheduler
 from base.request import LRequest
@@ -39,6 +42,7 @@ class Core():
         self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
         self.is_running = True
         self.total_response = 0
+        self.executor = BaseThreadPoolExecutor(max_workers=ASYNC_COUNT)
     def _auto_import_cls(self, path_list=[], is_spider=False):
         if is_spider:
             instances = {}
@@ -76,34 +80,47 @@ class Core():
             self.pool.apply_async(self._execute_start_requests)
             #self._execute_start_requests()
 
-        # slave只发送请求，所以total_response会自增
-        # 但是不会添加start_requests()请求，所以total_request不会自增
-        if ROLE == "slave" or ROLE is None:
-            # 2. 处理请求发送，返回的响应（response) 数据提取（request、item
-            for _ in range(ASYNC_COUNT):
-                self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
-            #self._execute_request_response_item()
 
-
-        while True:
+        # # slave只发送请求，所以total_response会自增
+        # # 但是不会添加start_requests()请求，所以total_request不会自增
+        # if ROLE == "slave" or ROLE is None:
+        #     # 2. 处理请求发送，返回的响应（response) 数据提取（request、item
+        #     for _ in range(ASYNC_COUNT):
+        #         self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
+        #     #self._execute_request_response_item()
+        #
+        #
+        # while True:
+        #     time.sleep(0.01)
+        #
+        #     if ROLE in ['master', 'slave']:
+        #         continue
+        #
+        #     # slave在抓取的过程中，如果提交了新的请求，有可能会导致 解析的响应数 和 提交的请求数 相同
+        #     # while 会判断退出
+        #     if self.scheduler.total_request == self.total_response and self.scheduler.total_request != 0:
+        #         self.is_running = False
+        #         break
+        #
+        # self.pool.close()
+        # self.pool.join()
+        #
+        # print("Main Thread is over!")
+        while 1:
             time.sleep(0.01)
-
-            if ROLE in ['master', 'slave']:
+            li_req = self.scheduler.get_batch_requests(ASYNC_COUNT)
+            if not li_req:
                 continue
-
-            # slave在抓取的过程中，如果提交了新的请求，有可能会导致 解析的响应数 和 提交的请求数 相同
-            # while 会判断退出
+            tasks = [self.executor.submit(self._execute_request_return_item,req) for req in li_req]
+            for fu in as_completed(tasks):
+                fu.result()
             if self.scheduler.total_request == self.total_response and self.scheduler.total_request != 0:
                 self.is_running = False
                 break
-
-        self.pool.close()
-        self.pool.join()
-
         print("Main Thread is over!")
-    def _callback(self, _):
-        if self.is_running:
-            self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
+    # def _callback(self, _):
+    #     if self.is_running:
+    #         self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
     def start(self):
         # 开始时间
         start = datetime.now()
@@ -194,7 +211,44 @@ class Core():
 
 
         self.total_response += 1
+    def _execute_request_return_item(self,request:LRequest):
 
+        if not request:
+            return
+
+        spider = self.spiders[request.spider_name]
+
+        for downloader_mid in self.downloader_mids:
+            request = downloader_mid.process_request(request, spider)
+        try:
+            response = self.downloader.send_request(request)
+        except Exception as e:
+            print(f'链接{request.url}出错,错误信息为',format_exc())
+            return
+        for downloader_mid in self.downloader_mids:
+            response = downloader_mid.process_response(response, spider)
+
+        callback_func = getattr(spider, request.callback)
+        parse_func = callback_func(response)
+
+        for item_or_request in parse_func:
+            if isinstance(item_or_request, LRequest):
+                item_or_request.spider_name = spider.name
+
+                for spider_mid in self.spider_mids:
+                    item_or_request  = spider_mid.process_request(item_or_request, spider)
+
+                self.scheduler.add_request(item_or_request)
+
+            elif isinstance(item_or_request, Item):
+                for spider_mid in self.spider_mids:
+                    item_or_request = spider_mid.process_item(item_or_request, spider)
+
+                for pipeline in self.pipelines:
+                    item_or_request = pipeline.process_item(item_or_request, spider)
+            else:
+                raise Exception("Not support data type : <{}>".format(type(item_or_request)))
+        self.total_response += 1
 if __name__ == '__main__':
     a=Core()
 

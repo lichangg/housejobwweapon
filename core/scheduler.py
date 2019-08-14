@@ -51,7 +51,15 @@ class Scheduler(object):
         except:
             return False
 
-
+    def get_batch_requests(self, batch:int):
+        li_req=[]
+        for _ in range(batch):
+            req=self.get_request()
+            if req:
+                li_req.append(req)
+            else:
+                break
+        return li_req
     def _filter_request(self, fp, request):
         """
             请求去重，并返回判断结果
