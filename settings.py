@@ -8,3 +8,5 @@ SPIDERS = ['beike.BeikeCrawler']
            # 'mogu.MoguCrawler']
 
 ASYNC_COUNT=5
+# QUEUE_TYPE=''
+# REDIS_QUEUE_NAME='beike_tasks'

@@ -20,6 +20,7 @@ REDIS_QUEUE_PORT='6379'
 REDIS_QUEUE_DB=0
 ASYNC_COUNT = 5
 ASYNC_TYPE = 'thread'
+QUEUE_TYPE='PYTHON'
 ROLE=None
 try:
     # 表示执行用户代码目录下的settings

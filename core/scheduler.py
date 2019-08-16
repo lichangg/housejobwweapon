@@ -3,33 +3,38 @@
 
 # from ..utils.log import logger
 
-from utils.default_settings import *
 # 根据解释器环境，判断是py2/py3，并导入对应的队列类
-#from six.moves.queue import Queue
-
 # 判断用户角色，如果是非分布式，使用Python的队列；如果是分布式，使用Redis的队列
-if ROLE == None:
-    from six.moves.queue import Queue
-    from utils.myset import NormalFilterSet as Set
-    print("ROLE is {}".format(ROLE))
 
-elif ROLE in ['master', 'slave']:
-    from utils.redisqueue import Queue
-    from utils.myset import RedisFilterSet as Set
-    print("ROLE is {}".format(ROLE))
-else:
-    raise ImportError("Not Support this Role : <{}>".format(ROLE))
 
 import six
 
 
+
 class Scheduler(object):
-    def __init__(self):
+    def __init__(self,ROLE=None,QUEUE_TYPE='PYTHON'):
+        if ROLE == None:
+            if QUEUE_TYPE == 'PYTHON':
+                from six.moves.queue import Queue
+                from utils.myset import NormalFilterSet as Set
+                print("ROLE is {},QUEUE_TYPE is {}".format(ROLE, QUEUE_TYPE))
+            elif QUEUE_TYPE == 'REDIS':
+                from utils.redisqueue import Queue
+                from utils.myset import RedisFilterSet as Set
+                print("ROLE is {},QUEUE_TYPE is {}".format(ROLE, QUEUE_TYPE))
+            else:
+                raise ImportError(
+                    "Not Support this Role : <{}> or Not Support this QUEUETYPE: <{}>".format(ROLE, QUEUE_TYPE))
+        elif ROLE in ['master', 'slave']:
+            from utils.redisqueue import Queue
+            from utils.myset import RedisFilterSet as Set
+            print("ROLE is {},QUEUE_TYPE is {}".format(ROLE, QUEUE_TYPE))
+        else:
+            raise ImportError(
+                "Not Support this Role : <{}> or Not Support this QUEUETYPE: <{}>".format(ROLE, QUEUE_TYPE))
         self.queue = Queue()
         self._filter_set = Set()
         self.total_request = 0
-
-
 
     def add_request(self, request):
         # 请求是否去重的控制，如果不去重，直接将请求加入请求队列
@@ -117,3 +122,9 @@ class Scheduler(object):
             else:
                 return string.encode("utf-8")
 
+if __name__ == '__main__':
+    from crawlers.beike import BeikeCrawler
+    s=Scheduler(QUEUE_TYPE='REDIS')
+    b=BeikeCrawler()
+    for req in b.start_requests():
+        s.add_request(req)

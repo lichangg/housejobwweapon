@@ -2,27 +2,27 @@
 # -*- coding:utf-8 -*-
 import json
 import re
-
+from utils.log_manage import LogManager
 from utils.proxy import proxies
 from base.item import Item
 from base.request import LRequest
-
+from traceback import format_exc
 class BeikeCrawler():
     name = 'beike'
     c_map = {'https://bj.ke.com': '北京', 'https://sh.ke.com': '上海', 'https://gz.ke.com': '广州', 'https://sz.ke.com': '深圳', 'https://cd.ke.com': '成都', 'https://hf.ke.com': '合肥', 'https://cq.ke.com': '重庆', 'https://fz.ke.com': '福州', 'https://xm.ke.com': '厦门', 'https://quanzhou.ke.com': '泉州', 'https://dg.ke.com': '东莞', 'https://gy.ke.com': '贵阳', 'https://zz.ke.com': '郑州', 'https://wh.ke.com': '武汉', 'https://cs.ke.com': '长沙', 'https://nj.ke.com': '南京', 'https://su.ke.com': '苏州', 'https://jn.ke.com': '济南', 'https://xa.ke.com': '西安', 'https://tj.ke.com': '天津', 'https://hz.ke.com': '杭州', 'https://nb.ke.com': '宁波'}
     # c_map = {'https://bj.ke.com': '北京'}
     longitude_pat = re.compile(r'longitude: \'(.*)\'')
     latitude_pat = re.compile(r'latitude: \'(.*)\'')
+    logger = LogManager('beike').get_logger_and_add_handlers(log_path='./logs',log_filename='beike.log')
 
     def start_requests(self):
         for beike_url in self.c_map:
         # for beike_url in self.c_map:
-            'https://bj.zu.ke.com/zufang/pg2'
             temp_url = beike_url.split('.')[0]+'.zu.'+'.'.join(beike_url.split('.')[1:])
             for page in range(1,101):
             # for page in range(1,5):
                 url = temp_url+f'/zufang/pg{page}'
-                yield LRequest(url, dont_filter=True,extra={'cname':self.c_map[beike_url],'origin_url':temp_url},proxies=proxies,timeout=(3,7))
+                yield LRequest(url, extra={'cname':self.c_map[beike_url],'origin_url':temp_url},proxies=proxies,timeout=(3,7))
 
     def parse(self,response):
         ori_url = response.extra['origin_url']
@@ -55,19 +55,22 @@ class BeikeCrawler():
             house_obj['img_group'] = []
             house_obj['city'] = response.extra['cname']
             house_obj['extra'] = None
-            yield LRequest(house_obj['house_url'], callback='parse_detail', dont_filter=True,extra=house_obj,proxies=proxies,timeout=(3,7))
+            yield LRequest(house_obj['house_url'], callback='parse_detail',extra=house_obj,proxies=proxies,timeout=(3,7))
 
     def parse_detail(self,response):
-        house_obj = response.extra
-        desc = response.xpath('//p[@data-el="houseComment"]/@data-desc')
-        info = response.xpath('//h3[@id="info"]/following-sibling::ul[1]//li[position()>1]/text()')
-        house_obj['desc'] = desc[0] if desc else ''
-        house_obj['info'] = ''.join(info)
-        longitude = self.longitude_pat.findall(response.text)
-        latitude = self.latitude_pat.findall(response.text)
-        house_obj['longitude'] = float(longitude[0]) if longitude else ''
-        house_obj['latitude'] = float(latitude[0]) if latitude else ''
-        yield Item(house_obj)
+        try:
+            house_obj = response.extra
+            desc = response.xpath('//p[@data-el="houseComment"]/@data-desc')
+            info = response.xpath('//h3[@id="info"]/following-sibling::ul[1]//li[position()>1]/text()')
+            house_obj['desc'] = desc[0] if desc else ''
+            house_obj['info'] = ''.join(info)
+            longitude = self.longitude_pat.findall(response.text)
+            latitude = self.latitude_pat.findall(response.text)
+            house_obj['longitude'] = float(longitude[0]) if longitude else ''
+            house_obj['latitude'] = float(latitude[0]) if latitude else ''
+            yield Item(house_obj)
+        except Exception:
+            self.logger.error(response.url+"-->"+format_exc())
 if __name__ == '__main__':
     import requests
 

@@ -13,7 +13,7 @@ from base.request import LRequest
 from base.item import Item
 from utils.default_settings import *
 from settings import *
-
+from base.exceptions import *
 if ASYNC_TYPE == "thread":
     from multiprocessing.dummy import Pool
     print("[并发类型]: {}".format(ASYNC_TYPE))
@@ -36,7 +36,7 @@ class Core():
         self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
         #self.downloader_mids = downloader_mids
         self.downloader_mids = self._auto_import_cls(DOWNLOADER_MIDDLEWARES)
-        self.scheduler = Scheduler()
+        self.scheduler = Scheduler(ROLE,QUEUE_TYPE)
         self.downloader = Downloader()
         # self.spider_mids = spider_mids
         self.spider_mids = self._auto_import_cls(SPIDER_MIDDLEWARES)
@@ -78,34 +78,7 @@ class Core():
             # 1 处理start_request请求并存如调度器中
             #self._execute_start_requests()
             self.pool.apply_async(self._execute_start_requests)
-            #self._execute_start_requests()
 
-
-        # # slave只发送请求，所以total_response会自增
-        # # 但是不会添加start_requests()请求，所以total_request不会自增
-        # if ROLE == "slave" or ROLE is None:
-        #     # 2. 处理请求发送，返回的响应（response) 数据提取（request、item
-        #     for _ in range(ASYNC_COUNT):
-        #         self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
-        #     #self._execute_request_response_item()
-        #
-        #
-        # while True:
-        #     time.sleep(0.01)
-        #
-        #     if ROLE in ['master', 'slave']:
-        #         continue
-        #
-        #     # slave在抓取的过程中，如果提交了新的请求，有可能会导致 解析的响应数 和 提交的请求数 相同
-        #     # while 会判断退出
-        #     if self.scheduler.total_request == self.total_response and self.scheduler.total_request != 0:
-        #         self.is_running = False
-        #         break
-        #
-        # self.pool.close()
-        # self.pool.join()
-        #
-        # print("Main Thread is over!")
         while 1:
             time.sleep(0.01)
             li_req = self.scheduler.get_batch_requests(ASYNC_COUNT)
@@ -223,31 +196,34 @@ class Core():
         try:
             response = self.downloader.send_request(request)
         except Exception as e:
-            print(f'链接{request.url}出错,错误信息为',format_exc())
+            spider.logger.error(f'链接{request.url}出错：'+str(e))
             return
         for downloader_mid in self.downloader_mids:
             response = downloader_mid.process_response(response, spider)
 
         callback_func = getattr(spider, request.callback)
-        parse_func = callback_func(response)
+        try:
+            parse_func = callback_func(response)
+            for item_or_request in parse_func:
+                if isinstance(item_or_request, LRequest):
+                    item_or_request.spider_name = spider.name
 
-        for item_or_request in parse_func:
-            if isinstance(item_or_request, LRequest):
-                item_or_request.spider_name = spider.name
+                    for spider_mid in self.spider_mids:
+                        item_or_request  = spider_mid.process_request(item_or_request, spider)
 
-                for spider_mid in self.spider_mids:
-                    item_or_request  = spider_mid.process_request(item_or_request, spider)
+                    self.scheduler.add_request(item_or_request)
 
-                self.scheduler.add_request(item_or_request)
+                elif isinstance(item_or_request, Item):
+                    for spider_mid in self.spider_mids:
+                        item_or_request = spider_mid.process_item(item_or_request, spider)
 
-            elif isinstance(item_or_request, Item):
-                for spider_mid in self.spider_mids:
-                    item_or_request = spider_mid.process_item(item_or_request, spider)
-
-                for pipeline in self.pipelines:
-                    item_or_request = pipeline.process_item(item_or_request, spider)
-            else:
-                raise Exception("Not support data type : <{}>".format(type(item_or_request)))
+                    for pipeline in self.pipelines:
+                        item_or_request = pipeline.process_item(item_or_request, spider)
+                else:
+                    raise Exception("Not support data type : <{}>".format(type(item_or_request)))
+        except Exception as e:
+            spider.logger.error(f'解析{request.url}出错：'+str(e)+f'响应码[{response.status_code}]')
+            return
         self.total_response += 1
 if __name__ == '__main__':
     a=Core()
